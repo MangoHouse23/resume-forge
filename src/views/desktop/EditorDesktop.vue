@@ -14,7 +14,9 @@
           @change="store.cacheCurrent()"
         />
         <el-tooltip :content="'职业：' + (profession?.name || '')" placement="bottom">
-          <span class="tb-prof">{{ profession?.icon }}</span>
+          <span class="tb-prof" :style="{ background: profession?.color || '#1f2937' }">
+            <VecIcon :name="store.state.current.meta.professionId" :size="18" />
+          </span>
         </el-tooltip>
       </div>
 
@@ -76,7 +78,7 @@
         </div>
         <div class="mnav-list">
           <div v-for="k in activeOrder" :key="k" class="mnav-item" :class="{ active: activeModule === k }" @click="activeModule = k">
-            <span class="mn-icon">{{ iconOf(k) }}</span>
+            <span class="mn-icon"><VecIcon :name="k" :size="15" /></span>
             <span class="mn-label">{{ labelOf(k) }}</span>
           </div>
         </div>
@@ -125,6 +127,7 @@ import TemplatePreview from '@/components/TemplatePreview.vue'
 import { MODULE_MAP, TEMPLATES } from '@/data/meta'
 import { presetById } from '@/data/presets'
 import { useResumeStore } from '@/store/resumeStore'
+import VecIcon from '@/components/VecIcon.vue'
 import { buildFullHtml } from '@/render/resumeHtml'
 import type { ResumeModuleKey } from '@/types/resume'
 
@@ -148,11 +151,6 @@ const COVERED: ResumeModuleKey[] = [
   'projects', 'skills', 'certificates', 'languages', 'hobbies', 'honors', 'training',
   'internship', 'campusExperience', 'portfolio'
 ]
-const ACTIVE_ICONS: Record<string, string> = {
-  basicInfo: '👤', targetInfo: '🎯', summary: '📝', jobObjective: '💡', education: '🎓',
-  workExperience: '💼', projects: '🚧', skills: '🧰', certificates: '🏅', languages: '🌐',
-  hobbies: '🎈', honors: '🏆', training: '📖', internship: '🩺', campusExperience: '🏫', portfolio: '🔗'
-}
 
 const activeOrder = computed(() => {
   const order = store.state.current.moduleOrder
@@ -167,7 +165,6 @@ const colorPresets = ['#2563eb', '#0ea5e9', '#7c3aed', '#ec4899', '#f59e0b', '#1
 
 function labelOf(k: ResumeModuleKey) { return MODULE_MAP[k]?.label || k }
 function hintOf(k: ResumeModuleKey) { return MODULE_MAP[k]?.hint || '' }
-function iconOf(k: ResumeModuleKey) { return ACTIVE_ICONS[k] || '📄' }
 
 function setTemplate(id: string) { store.state.current.meta.templateId = id; store.cacheCurrent() }
 function setAccent(c: string) { store.state.current.meta.accentColor = c; store.cacheCurrent() }
@@ -225,7 +222,7 @@ onBeforeUnmount(() => { stopWatch(); clearTimeout(saveTimer) })
 .tb-title { width: 200px; }
 .tb-title :deep(.el-input__wrapper) { background: transparent; border-radius: 8px; box-shadow: none; border-bottom: 1px solid var(--rf-line); }
 .tb-title :deep(.el-input__wrapper:hover), .tb-title :deep(.el-input__wrapper.is-focus) { box-shadow: none; border-bottom-color: var(--rf-accent); }
-.tb-prof { font-size: 20px; border-radius: 10px; padding: 5px 9px; background: var(--rf-ink); color: #fff; flex-shrink: 0; box-shadow: var(--rf-shadow-sm); }
+.tb-prof { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #fff; flex-shrink: 0; box-shadow: var(--rf-shadow-sm); }
 .tb-mid { flex: 1; display: flex; align-items: center; gap: 12px; justify-content: center; }
 .tpl-group :deep(.el-radio-button__inner) { border-color: var(--rf-line); color: var(--rf-ink-2); box-shadow: none; padding: 10px 16px; background: var(--rf-card); }
 .tpl-group :deep(.el-radio-button:first-child .el-radio-button__inner) { border-radius: 999px 0 0 999px; }

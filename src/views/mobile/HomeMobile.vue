@@ -1,7 +1,7 @@
 <template>
   <div class="m-home">
     <div class="m-hero">
-      <div class="m-badge">📋 简历工坊</div>
+      <div class="m-badge"><VecIcon :name="'audit'" :size="14" /> 简历工坊</div>
       <h1 class="m-title">多职业<br /><em>简历模版</em>生成器</h1>
       <p class="m-sub">为 20+ 职业量身打造 · 丰富模块自由组合 · 一键导出</p>
       <van-button round type="primary" class="m-cta" size="large" @click="goBlank">
@@ -10,16 +10,16 @@
     </div>
 
     <div class="m-body">
-      <div v-if="saved.length" class="m-sec">
+      <div class="m-sec">
         <div class="m-sec-head">
           <span class="m-sec-title"><van-icon name="orders-o" /> 我的简历</span>
-          <van-tag round type="primary" size="medium">{{ saved.length }} 份</van-tag>
+          <van-button plain size="mini" round @click="goBlank">新建</van-button>
         </div>
-        <div class="m-saved-list">
+        <div v-if="saved.length" class="m-saved-list">
           <van-swipe-cell v-for="s in saved" :key="s.id">
             <div class="m-saved" @click="openSaved(s.id)">
               <div class="m-saved-ic" :style="{ background: presetById(s.professionId)?.color || '#2563eb' }">
-                {{ presetById(s.professionId)?.icon || '📄' }}
+                <VecIcon :name="s.professionId" :size="18" />
               </div>
               <div class="m-saved-info">
                 <div class="m-saved-name">{{ s.title }}</div>
@@ -31,6 +31,11 @@
               <van-button square type="danger" text="删除" class="m-del" @click="removeSaved(s.id)" />
             </template>
           </van-swipe-cell>
+        </div>
+        <div v-else class="m-saved-empty" @click="goBlank">
+          <van-icon name="file-o" class="mse-ic" />
+          <span>还没有保存的简历，去创作一份</span>
+          <van-icon name="arrow" />
         </div>
       </div>
 
@@ -47,7 +52,9 @@
         />
         <div class="m-grid">
           <div v-for="p in filtered" :key="p.id" class="m-card" @click="startProfession(p)">
-            <span class="m-card-icon" :style="{ background: p.color }">{{ p.icon }}</span>
+            <span class="m-card-icon" :style="{ background: p.color }">
+              <VecIcon :name="p.id" :size="18" />
+            </span>
             <div class="m-card-name">{{ p.name }}</div>
             <div class="m-card-mod">{{ moduleSummary(p) }}</div>
           </div>
@@ -75,6 +82,7 @@ import { showConfirmDialog, closeToast } from 'vant'
 import { PROFESSIONS, presetById, type ProfessionPreset } from '@/data/presets'
 import { MODULE_MAP } from '@/data/meta'
 import { useResumeStore } from '@/store/resumeStore'
+import VecIcon from '@/components/VecIcon.vue'
 import type { ResumeModuleKey } from '@/types/resume'
 
 const router = useRouter()
@@ -136,38 +144,45 @@ function removeSaved(id: string) {
   border-bottom: 1px solid var(--rf-line-soft);
 }
 .m-hero::after { content: ''; position: absolute; width: 200px; height: 200px; border-radius: 50%; background: radial-gradient(circle, var(--rf-accent-soft), transparent 65%); right: -50px; top: -40px; }
-.m-badge { display: inline-block; background: transparent; border: 1px solid var(--rf-accent); color: var(--rf-accent); padding: 4px 12px; border-radius: 999px; font-size: 12px; position: relative; z-index: 1; letter-spacing: .04em; }
+.m-badge { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: 1px solid var(--rf-accent); color: var(--rf-accent); padding: 4px 12px; border-radius: 999px; font-size: 12px; position: relative; z-index: 1; letter-spacing: .04em; }
 .m-title { font-size: 33px; font-weight: 700; line-height: 1.3; margin: 14px 0 8px; position: relative; z-index: 1; font-family: var(--rf-font-serif); letter-spacing: .02em; }
-.m-title em { font-style: normal; color: var(--rf-accent); }
+.m-title em { font-style: italic; color: var(--rf-accent); padding-bottom: 3px; background-image: linear-gradient(var(--rf-accent), var(--rf-accent)); background-repeat: no-repeat; background-size: 100% .1em; background-position: 0 100%; }
 .m-sub { font-size: 13px; opacity: .8; margin: 0 0 20px; position: relative; z-index: 1; color: var(--rf-ink-2); }
-.m-cta { width: 100%; font-weight: 600; box-shadow: 0 8px 20px rgba(0,0,0,.2); position: relative; z-index: 1; }
+.m-cta { width: 100%; font-weight: 600; box-shadow: 0 6px 16px rgba(169,71,47,.22); position: relative; z-index: 1; }
+.m-cta:active { transform: scale(.98); }
 
 .m-body { padding: 16px 14px; }
 .m-sec { margin-bottom: 20px; }
 .m-sec-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
-.m-sec-title { font-size: 16px; font-weight: 700; color: #1f2937; display: inline-flex; align-items: center; gap: 6px; }
+.m-sec-title { font-size: 16px; font-weight: 700; color: var(--rf-ink); display: inline-flex; align-items: center; gap: 6px; }
 .m-search { margin-bottom: 12px; padding: 0; background: transparent; }
 
 .m-saved-list { background: var(--rf-card); border: 1px solid var(--rf-line-soft); border-radius: 14px; overflow: hidden; }
 .m-saved { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: var(--rf-card); }
-.m-saved-ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; color: #fff; flex-shrink: 0; opacity: .92; }
+.m-saved-ic { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; font-size: 20px; color: #fff; flex-shrink: 0; opacity: .92; box-shadow: var(--rf-shadow-sm); }
 .m-saved-info { flex: 1; min-width: 0; }
-.m-saved-name { font-size: 15px; font-weight: 600; color: #1f2937; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.m-saved-meta { font-size: 12px; color: #94a3b8; margin-top: 3px; }
-.m-arrow { color: #cbd5e1; }
+.m-saved-name { font-size: 15px; font-weight: 600; color: var(--rf-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-saved-meta { font-size: 12px; color: var(--rf-muted); margin-top: 3px; }
+.m-arrow { color: var(--rf-faint); }
 .m-del { height: 66px; }
 
 .m-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-.m-card { background: var(--rf-card); border: 1px solid var(--rf-line); border-radius: 14px; padding: 13px; }
-.m-card-icon { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; font-size: 20px; box-shadow: inset 0 0 0 1px rgba(0,0,0,.05); }
+.m-card { background: var(--rf-card); border: 1px solid var(--rf-line); border-radius: 14px; padding: 13px; transition: transform .15s cubic-bezier(.2,.7,.2,1), box-shadow .15s, border-color .15s; }
+.m-card:active { transform: scale(.97); border-color: color-mix(in srgb, var(--rf-accent) 40%, var(--rf-line)); box-shadow: var(--rf-shadow-sm); }
+.m-card-icon { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; color: #fff; box-shadow: var(--rf-shadow-sm); }
 .m-card-name { font-size: 15px; font-weight: 600; margin-top: 8px; color: var(--rf-ink); font-family: var(--rf-font-serif); }
 .m-card-mod { font-size: 11px; color: var(--rf-muted); margin-top: 3px; line-height: 1.5; }
+
+.m-saved-empty { display: flex; align-items: center; gap: 10px; padding: 18px 14px; background: var(--rf-card); border: 1px dashed var(--rf-line); border-radius: 14px; color: var(--rf-muted); font-size: 13px; cursor: pointer; transition: border-color .18s, color .18s; }
+.m-saved-empty:active { border-color: var(--rf-accent); color: var(--rf-accent); }
+.m-saved-empty .mse-ic { font-size: 20px; color: var(--rf-faint); }
+.m-saved-empty .van-icon-arrow { margin-left: auto; color: var(--rf-faint); }
 
 .m-feats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin: 4px 0 18px; }
 .m-feat { background: var(--rf-card); border: 1px solid var(--rf-line-soft); border-radius: 12px; padding: 14px; }
 .m-feat :deep(.van-icon) { font-size: 22px; }
-.mf-t { font-size: 14px; font-weight: 600; margin-top: 8px; color: #1f2937; }
-.mf-d { font-size: 11px; color: #94a3b8; margin-top: 3px; }
+.mf-t { font-size: 14px; font-weight: 600; margin-top: 8px; color: var(--rf-ink); }
+.mf-d { font-size: 11px; color: var(--rf-muted); margin-top: 3px; }
 
-.m-footer { text-align: center; color: #b6c2d2; font-size: 12px; padding: 12px 0 6px; }
+.m-footer { text-align: center; color: var(--rf-faint); font-size: 12px; padding: 12px 0 6px; }
 </style>

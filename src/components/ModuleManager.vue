@@ -14,10 +14,12 @@
         v-for="(mod, idx) in orderedModules"
         :key="mod.key"
         class="mm-row"
+        :class="{ dragging: dragIdx === idx }"
         draggable="true"
         @dragstart="dragIdx = idx"
-        @dragover.prevent
+        @dragover.prevent="onDragOver(idx)"
         @drop="onDrop(idx)"
+        @dragend="dragIdx = -1"
       >
         <span class="mm-grip"><el-icon><Rank /></el-icon></span>
         <el-checkbox
@@ -54,9 +56,11 @@ const emit = defineEmits<{
 
 const ALWAYS: ResumeModuleKey[] = ['targetInfo', 'basicInfo']
 
+// 严格遵循 moduleOrder 的先后顺序输出（而非模板目录固定顺序），保证拖拽/排序实时反映
 const orderedModules = computed<ModuleMeta[]>(() => {
   const order = [...ALWAYS.filter((k) => !props.moduleOrder.includes(k)), ...props.moduleOrder]
-  return MODULE_CATALOG.filter((m) => order.includes(m.key))
+  const map = new Map(MODULE_CATALOG.map((m) => [m.key, m]))
+  return order.map((k) => map.get(k)).filter((m): m is ModuleMeta => !!m)
 })
 
 function isEnabled(key: ResumeModuleKey) {
@@ -74,6 +78,15 @@ function toggle(key: ResumeModuleKey, on: boolean) {
   emit('update:moduleOrder', order)
 }
 
+// 由展示顺序反推 moduleOrder：剔除固定模块，保留其余顺序，并追加遗漏项
+function toOrder(arr: ModuleMeta[]): ResumeModuleKey[] {
+  const order = arr.filter((m) => !ALWAYS.includes(m.key)).map((m) => m.key)
+  for (const k of props.moduleOrder) {
+    if (!order.includes(k)) order.push(k)
+  }
+  return order
+}
+
 function move(idx: number, dir: number) {
   const arr = [...orderedModules.value]
   const t = idx + dir
@@ -81,16 +94,21 @@ function move(idx: number, dir: number) {
   const moved = arr[idx]
   arr[idx] = arr[t]
   arr[t] = moved
-  // 只更新非固定模块的顺序
-  const order = arr.filter((m) => !ALWAYS.includes(m.key)).map((m) => m.key)
-  // 保证原先在顺序里但不在拖拽列表里的模块保留
-  for (const k of props.moduleOrder) {
-    if (!order.includes(k)) order.push(k)
-  }
-  emit('update:moduleOrder', order)
+  emit('update:moduleOrder', toOrder(arr))
 }
 
 const dragIdx = ref(-1)
+function onDragOver(idx: number) {
+  // 拖拽悬停到其他行时实时重排，反馈到抽屉列表
+  if (dragIdx.value === -1 || dragIdx.value === idx) return
+  const arr = [...orderedModules.value]
+  const from = dragIdx.value
+  const moved = arr[from]
+  arr.splice(from, 1)
+  arr.splice(idx, 0, moved)
+  dragIdx.value = idx
+  emit('update:moduleOrder', toOrder(arr))
+}
 function onDrop(idx: number) {
   const arr = orderedModules.value
   const from = dragIdx.value
@@ -98,11 +116,7 @@ function onDrop(idx: number) {
   const moved = arr[from]
   arr.splice(from, 1)
   arr.splice(idx, 0, moved)
-  const order = arr.filter((m) => !ALWAYS.includes(m.key)).map((m) => m.key)
-  for (const k of props.moduleOrder) {
-    if (!order.includes(k)) order.push(k)
-  }
-  emit('update:moduleOrder', order)
+  emit('update:moduleOrder', toOrder(arr))
   dragIdx.value = -1
 }
 </script>

@@ -41,7 +41,7 @@
       <template v-if="viewMode === 'edit'">
         <!-- 选择当前编辑模块 -->
         <div class="m-modpick" @click="showModulePick = true">
-          <span class="mmo-icon">{{ iconOf(activeModule) }}</span>
+          <span class="mmo-icon"><VecIcon :name="activeModule" :size="18" /></span>
           <span class="mmo-label">{{ labelOf(activeModule) }}</span>
           <span class="mmo-hint">{{ hintOf(activeModule) }}</span>
           <van-icon name="arrow" class="mmo-arrow" />
@@ -68,9 +68,9 @@
         <div class="mm-title">模块管理</div>
         <p class="mm-tip">勾选显示 / 隐藏模块，拖条可上下调整顺序。</p>
         <div class="mm-list">
-          <div v-for="(mod, idx) in allModules" :key="mod.key" class="mm-item" :class="{ off: !isOn(mod.key) }">
+          <div v-for="(mod, idx) in moduleList" :key="mod.key" class="mm-item" :class="{ off: !isOn(mod.key) }">
             <van-switch :model-value="isOn(mod.key)" size="20px" @update:model-value="(v)=>toggle(mod.key, v as boolean)" />
-            <span class="mm-item-icon">{{ iconOf(mod.key) }}</span>
+            <span class="mm-item-icon"><VecIcon :name="mod.key" :size="17" /></span>
             <div class="mm-item-info">
               <div class="mm-item-name">{{ mod.label }}</div>
               <div class="mm-item-hint">{{ mod.hint }}</div>
@@ -136,6 +136,7 @@ import MobilePreview from './MobilePreview.vue'
 import { MODULE_CATALOG, MODULE_MAP, TEMPLATES } from '@/data/meta'
 import { presetById } from '@/data/presets'
 import { useResumeStore } from '@/store/resumeStore'
+import VecIcon from '@/components/VecIcon.vue'
 import { buildFullHtml } from '@/render/resumeHtml'
 import type { ResumeModuleKey } from '@/types/resume'
 
@@ -157,12 +158,6 @@ const accent = computed(() => store.state.current.meta.accentColor)
 const templateId = computed(() => store.state.current.meta.templateId)
 const templates = TEMPLATES
 
-const ACTIVE_ICONS: Record<string, string> = {
-  basicInfo: '👤', targetInfo: '🎯', summary: '📝', jobObjective: '💡', education: '🎓',
-  workExperience: '💼', projects: '🚧', skills: '🧰', certificates: '🏅', languages: '🌐',
-  hobbies: '🎈', honors: '🏆', training: '📖', internship: '🩺', campusExperience: '🏫', portfolio: '🔗'
-}
-const iconOf = (k: ResumeModuleKey) => ACTIVE_ICONS[k] || '📄'
 const labelOf = (k: ResumeModuleKey) => MODULE_MAP[k]?.label || k
 const hintOf = (k: ResumeModuleKey) => MODULE_MAP[k]?.hint || ''
 
@@ -175,7 +170,7 @@ const enabled = computed<ResumeModuleKey[]>(() => {
 
 const showModulePick = ref(false)
 const moduleActions = computed(() =>
-  enabled.value.map((k) => ({ name: `${iconOf(k)} ${labelOf(k)}`, key: k }))
+  enabled.value.map((k) => ({ name: labelOf(k), key: k }))
 )
 function onPickModule(action: { key: ResumeModuleKey }) {
   activeModule.value = action.key
@@ -183,7 +178,15 @@ function onPickModule(action: { key: ResumeModuleKey }) {
 
 // 模块管理
 const showModule = ref(false)
-const allModules = computed(() => MODULE_CATALOG)
+// 按当前顺序展示：固定模块靠前，其余按 moduleOrder 排序，未启用项排后
+const moduleList = computed(() => {
+  const order = [...ALWAYS.filter((k) => !store.state.current.moduleOrder.includes(k)), ...store.state.current.moduleOrder]
+  const pos = (k: ResumeModuleKey) => {
+    const i = order.indexOf(k)
+    return i === -1 ? 999 : i
+  }
+  return [...MODULE_CATALOG].sort((a, b) => pos(a.key) - pos(b.key))
+})
 const isOn = (k: ResumeModuleKey) => ALWAYS.includes(k) || store.state.current.moduleOrder.includes(k)
 function toggle(k: ResumeModuleKey, on: boolean) {
   const order = [...store.state.current.moduleOrder]
