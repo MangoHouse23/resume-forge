@@ -14,7 +14,7 @@
           @change="store.cacheCurrent()"
         />
         <el-tooltip :content="'职业：' + (profession?.name || '')" placement="bottom">
-          <span class="tb-prof" :style="{ background: profession?.color || '#1f2937' }">
+          <span class="tb-prof" :style="{ background: profession?.color || '#1f2937', color: onColor(profession?.color || '#1f2937') }">
             <VecIcon :name="store.state.current.meta.professionId" :size="18" />
           </span>
         </el-tooltip>
@@ -129,6 +129,7 @@ import { presetById } from '@/data/presets'
 import { useResumeStore } from '@/store/resumeStore'
 import VecIcon from '@/components/VecIcon.vue'
 import { buildFullHtml } from '@/render/resumeHtml'
+import { onColor } from '@/utils/color'
 import type { ResumeModuleKey } from '@/types/resume'
 
 const route = useRoute()

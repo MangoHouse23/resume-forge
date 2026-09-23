@@ -71,7 +71,7 @@
 
       <div v-if="saved.length" class="mr-grid">
         <div v-for="s in saved" :key="s.id" class="mr-card rv" @click="openSaved(s.id)">
-          <div class="mr-tile" :style="{ background: professionColor(s.professionId) }">
+          <div class="mr-tile" :style="{ background: professionColor(s.professionId), color: onColor(professionColor(s.professionId)) }">
             <VecIcon :name="s.professionId" :size="18" />
           </div>
           <div class="mr-info">
@@ -101,7 +101,7 @@
           <div v-for="(p, i) in professions" :key="p.id" class="prof-card rv" :style="{ animationDelay: (i % 4) * 0.05 + 's' }" @click="startProfession(p)">
             <div class="pc-num serif">{{ String(i + 1).padStart(2, '0') }}</div>
             <div class="pc-top">
-              <span class="pc-tile" :style="{ background: p.color }">
+              <span class="pc-tile" :style="{ background: p.color, color: onColor(p.color) }">
                 <VecIcon :name="p.id" :size="20" />
               </span>
             </div>
@@ -146,6 +146,7 @@ import { PROFESSIONS, presetById, type ProfessionPreset } from '@/data/presets'
 import { MODULE_MAP } from '@/data/meta'
 import { useResumeStore } from '@/store/resumeStore'
 import VecIcon from '@/components/VecIcon.vue'
+import { onColor } from '@/utils/color'
 import type { ResumeModuleKey } from '@/types/resume'
 
 const router = useRouter()

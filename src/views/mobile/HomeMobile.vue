@@ -18,7 +18,7 @@
         <div v-if="saved.length" class="m-saved-list">
           <van-swipe-cell v-for="s in saved" :key="s.id">
             <div class="m-saved" @click="openSaved(s.id)">
-              <div class="m-saved-ic" :style="{ background: presetById(s.professionId)?.color || '#2563eb' }">
+              <div class="m-saved-ic" :style="savedTileStyle(s.professionId)">
                 <VecIcon :name="s.professionId" :size="18" />
               </div>
               <div class="m-saved-info">
@@ -52,7 +52,7 @@
         />
         <div class="m-grid">
           <div v-for="p in filtered" :key="p.id" class="m-card" @click="startProfession(p)">
-            <span class="m-card-icon" :style="{ background: p.color }">
+            <span class="m-card-icon" :style="{ background: p.color, color: onColor(p.color) }">
               <VecIcon :name="p.id" :size="18" />
             </span>
             <div class="m-card-name">{{ p.name }}</div>
@@ -83,6 +83,7 @@ import { PROFESSIONS, presetById, type ProfessionPreset } from '@/data/presets'
 import { MODULE_MAP } from '@/data/meta'
 import { useResumeStore } from '@/store/resumeStore'
 import VecIcon from '@/components/VecIcon.vue'
+import { onColor } from '@/utils/color'
 import type { ResumeModuleKey } from '@/types/resume'
 
 const router = useRouter()
@@ -106,6 +107,11 @@ const filtered = computed(() => {
       p.tagline.toLowerCase().includes(k)
   )
 })
+
+function savedTileStyle(pid: string) {
+  const c = presetById(pid)?.color || '#2563eb'
+  return { background: c, color: onColor(c) }
+}
 
 function moduleSummary(p: ProfessionPreset) {
   return (p.moduleOrder.slice(0, 4) as ResumeModuleKey[])

@@ -1,5 +1,6 @@
 // 简历渲染引擎：根据数据生成独立的 HTML（预览与导出共用）
 import type { ResumeData, ResumeModuleKey, SkillItem, ExperienceItem } from '@/types/resume'
+import { isLight, darken, accentText } from '@/utils/color'
 
 export function esc(s: unknown): string {
   if (s === undefined || s === null) return ''
@@ -168,23 +169,31 @@ function listSection(title: string, items: any[], itemHtml: (it: any) => string)
     : ''
 }
 
-function buildHeader(d: ResumeData, showAvatar: boolean): string {
+// 寸照：固定 5:7 竖向矩形区域，未设照片时显示占位人形图标
+function idPhoto(d: ResumeData): string {
+  const a = d.basicInfo.avatar
+  const inner = a
+    ? `<img src="${esc(a)}" alt="寸照"/>`
+    : `<span class="rf-idphoto-ph" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c.6-3.4 3.8-5 7.5-5s6.9 1.6 7.5 5"/></svg>
+       </span>`
+  return `<div class="rf-idphoto">${inner}</div>`
+}
+
+function buildHeader(d: ResumeData, showPhoto: boolean): string {
   const b = d.basicInfo
-  const avatar = b.avatar
-    ? `<div class="rf-avatar" style="background-image:url(${esc(b.avatar)})"></div>`
-    : ''
   const sub = [b.gender && `性别 ${esc(b.gender)}`, b.age && `${esc(b.age)}岁`, b.birthDate && esc(b.birthDate)]
     .filter(Boolean)
     .join(' · ')
   return `
     <div class="rf-header">
-      ${showAvatar && avatar ? `<div class="rf-avatar-wrap">${avatar}</div>` : ''}
       <div class="rf-h-main">
         <h1 class="rf-name">${esc(b.name || '你的姓名')}</h1>
         <div class="rf-h-sub">${esc(d.targetInfo.position || '目标职位')}</div>
         ${sub ? `<div class="rf-h-basic">${sub}</div>` : ''}
         <div class="rf-chips">${contactChips(d).join('')}</div>
       </div>
+      ${showPhoto ? idPhoto(d) : ''}
     </div>`
 }
 
@@ -196,10 +205,19 @@ function buildHtml(d: ResumeData): string {
   return cleanHtml(d, accent)
 }
 
+// 自适应主题：按主题色亮度挑选可读文字色，侧栏/色带渐变强制足够深以配白字
+function styleVars(accent: string): string {
+  const base = accent || '#a9472f'
+  const light = isLight(base)
+  return `--accent:${base};--on-accent:${light ? '#221d17' : '#ffffff'};--accent-text:${accentText(base)};` +
+    `--side-bg:linear-gradient(180deg,${darken(base, 0.42)},${darken(base, 0.78)});` +
+    `--band-bg:linear-gradient(120deg,${darken(base, 0.5)},${darken(base, 0.82)})`
+}
+
 function cleanHtml(d: ResumeData, accent: string): string {
   const order = d.moduleOrder
   const body = [buildHeader(d, true), ...order.map((k) => renderSection(k, d)).filter(Boolean)].join('')
-  return `<div class="rfp clean" style="--accent:${accent}">${body}</div>`
+  return `<div class="rfp clean" style="${styleVars(accent)}">${body}</div>`
 }
 
 function elegantHtml(d: ResumeData, accent: string): string {
@@ -207,7 +225,7 @@ function elegantHtml(d: ResumeData, accent: string): string {
   const main = MAIN.filter((k) => d.moduleOrder.includes(k)).map((k) => renderSection(k, d)).filter(Boolean).join('')
   const header = `
     <div class="rf-header side">
-      ${d.basicInfo.avatar ? `<div class="rf-avatar-wrap"><div class="rf-avatar" style="background-image:url(${esc(d.basicInfo.avatar)})"></div></div>` : ''}
+      ${idPhoto(d)}
       <h1 class="rf-name">${esc(d.basicInfo.name || '你的姓名')}</h1>
       <div class="rf-h-sub">${esc(d.targetInfo.position || '目标职位')}</div>
       <div class="rf-side-contacts">
@@ -219,7 +237,7 @@ function elegantHtml(d: ResumeData, accent: string): string {
       </div>
     </div>`
   return `
-    <div class="rfp elegant" style="--accent:${accent}">
+    <div class="rfp elegant" style="${styleVars(accent)}">
       <aside class="rf-side">
         ${header}
         ${side}
@@ -232,11 +250,10 @@ function vibrantHtml(d: ResumeData, accent: string): string {
   const side = SIDEBAR.filter((k) => d.moduleOrder.includes(k)).map((k) => renderSection(k, d)).filter(Boolean).join('')
   const main = MAIN.filter((k) => d.moduleOrder.includes(k)).map((k) => renderSection(k, d)).filter(Boolean).join('')
   const name = d.basicInfo.name || '你的姓名'
-  const initial = name.charAt(0)
   return `
-    <div class="rfp vibrant" style="--accent:${accent}">
+    <div class="rfp vibrant" style="${styleVars(accent)}">
       <div class="rf-band">
-        <div class="rf-band-avatar">${d.basicInfo.avatar ? `<img src="${esc(d.basicInfo.avatar)}" alt=""/>` : esc(initial)}</div>
+        ${idPhoto(d)}
         <div class="rf-band-info">
           <h1 class="rf-name">${esc(name)}</h1>
           <div class="rf-h-sub">${esc(d.targetInfo.position || '目标职位')}</div>
@@ -288,16 +305,20 @@ export const PREVIEW_CSS = `
 
 /* ---------- header ---------- */
 .rf-header{display:flex;gap:26px;align-items:center;margin-bottom:26px;padding-bottom:22px;border-bottom:1px solid #e6e0d4}
-.rf-avatar-wrap{flex-shrink:0}
-.rf-avatar{width:96px;height:96px;border-radius:50%;background-position:center;background-size:cover;border:1px solid rgba(0,0,0,.08);box-shadow:0 2px 10px rgba(0,0,0,.08)}
+/* 寸照：5:7 竖向矩形，未设照片时显示占位图标 */
+.rf-idphoto{width:100px;height:140px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#f2f4f8;border:1px solid #e6e0d4;display:grid;place-items:center}
+.rf-idphoto img{width:100%;height:100%;object-fit:cover;display:block}
+.rf-idphoto-ph{width:100%;height:100%;display:grid;place-items:center;color:#c3c9d4}
+.rf-idphoto-ph svg{width:34px;height:34px;opacity:.75}
 .rf-h-main{flex:1}
 .rf-name{font-size:32px;font-weight:700;letter-spacing:.04em;color:#1f1b15;line-height:1.2;font-family:"Noto Serif SC","Songti SC",serif}
-.rf-h-sub{color:var(--accent);font-weight:600;font-size:15px;margin-top:5px}
+.rf-h-sub{color:var(--accent-text,var(--accent));font-weight:600;font-size:15px;margin-top:5px}
 .rf-h-basic{color:#8b8174;font-size:12px;margin-top:4px}
 .rf-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .rf-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid #ece6db;background:#faf8f4;border-radius:999px;padding:3px 12px;font-size:12px;color:#4b443a}
-.rf-chip i{font-style:normal;color:var(--accent)}
+.rf-chip i{font-style:normal;color:var(--accent-text,var(--accent))}
 .rf-chips.dark .rf-chip{background:rgba(255,255,255,.16);border-color:transparent;color:#fff}
+.rf-chips.dark .rf-chip i{color:rgba(255,255,255,.85)}
 
 /* ---------- section ---------- */
 .rf-sec{margin-bottom:22px}
@@ -309,17 +330,17 @@ export const PREVIEW_CSS = `
 /* ---------- lines ---------- */
 .rf-main-line{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .rf-left b{font-size:14px;color:#111827}
-.rf-tag{display:inline-block;background:var(--accent);color:#fff;font-size:11px;padding:1px 8px;border-radius:4px;margin-left:8px;vertical-align:1px}
+.rf-tag{display:inline-block;background:var(--accent);color:var(--on-accent,#fff);font-size:11px;padding:1px 8px;border-radius:4px;margin-left:8px;vertical-align:1px}
 .rf-muted{color:#6b7280;font-size:12px;margin-left:8px}
 .rf-right{color:#6b7280;font-size:12px;white-space:nowrap}
 .rf-desc{color:#4b5563;font-size:12.5px;margin-top:6px}
 .rf-gpa{color:#059669;font-size:12px;margin-top:4px}
 .rf-hl{margin:8px 0 0;padding-left:18px;color:#374151;font-size:12.5px;display:flex;flex-direction:column;gap:4px}
-.rf-hl li::marker{color:var(--accent)}
-.rf-stack{display:inline-block;background:#ecfdf5;color:#059669;font-size:11px;padding:2px 8px;border-radius:4px;margin-top:6px}
+.rf-hl li::marker{color:var(--accent-text,var(--accent))}
+.rf-stack{display:inline-block;background:#ecfdf5;color:#0f7a44;font-size:11px;padding:2px 8px;border-radius:4px;margin-top:6px}
 .rf-simple-line{display:flex;align-items:baseline;gap:8px;font-size:13px}
 .rf-simple-line b{font-size:13px}
-.rf-dot{color:var(--accent);font-size:8px}
+.rf-dot{color:var(--accent-text,var(--accent));font-size:8px}
 .rf-simple-line .rf-muted{margin-left:auto;margin-left:0}
 .rf-simple-line .rf-muted:last-of-type{margin-left:auto}
 
@@ -348,17 +369,21 @@ export const PREVIEW_CSS = `
 
 /* ============ ELEGANT (two-column) ============ */
 .rfp.elegant{display:flex;padding:0;min-height:1123px;overflow:hidden}
-.rf-side{width:288px;flex-shrink:0;background:linear-gradient(180deg,var(--accent) 0%,color-mix(in srgb,var(--accent) 55%,#0f172a) 100%);color:#fff;padding:34px 24px}
+.rf-side{width:288px;flex-shrink:0;background:var(--side-bg,linear-gradient(180deg,var(--accent) 0%,color-mix(in srgb,var(--accent) 55%,#0f172a) 100%));color:#fff;padding:34px 24px}
 .rf-side .rf-sec-title{color:#fff;border-left-color:rgba(255,255,255,.6);font-size:14px}
+.rf-side .rf-h-sub,.rf-side .rf-name{color:#fff}
+.rf-side .rf-h-basic{color:rgba(255,255,255,.72)}
 .rf-side .rf-summary,.rf-side .rf-desc,.rf-side b,.rf-side .rf-muted,.rf-side .rf-dots i{color:#fff}
 .rf-side .rf-muted{color:rgba(255,255,255,.75)}
 .rf-side .rf-dots i{background:rgba(255,255,255,.25)}
 .rf-side .rf-dots i.on{background:#fff}
 .rf-side .rf-chip{background:rgba(255,255,255,.15);color:#fff}
+.rf-side .rf-chip i{color:rgba(255,255,255,.85)}
 .rf-side .rf-dot{color:rgba(255,255,255,.7)}
 .rf-side .rf-skill-tags em{background:rgba(255,255,255,.15);color:rgba(255,255,255,.85)}
 .rf-header.side{flex-direction:column;align-items:flex-start;gap:12px;padding-bottom:18px;margin-bottom:16px;border-bottom-color:rgba(255,255,255,.25)}
-.rf-header.side .rf-avatar{width:84px;height:84px;border-color:rgba(255,255,255,.6)}
+.rfp.elegant .rf-idphoto{width:92px;height:128px;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.5)}
+.rfp.elegant .rf-idphoto-ph{color:rgba(255,255,255,.6)}
 .rf-header.side .rf-name{color:#fff;font-size:24px}
 .rf-side-contacts{display:flex;flex-direction:column;gap:8px;margin-top:6px}
 .rf-side-li{display:flex;align-items:center;gap:10px;font-size:12px}
@@ -367,24 +392,24 @@ export const PREVIEW_CSS = `
 
 /* ============ VIBRANT (creative) ============ */
 .rfp.vibrant{padding:0;overflow:hidden}
-.rf-band{display:flex;align-items:center;gap:22px;padding:30px 40px;background:linear-gradient(120deg,var(--accent),color-mix(in srgb,var(--accent) 45%,#000) 130%);color:#fff}
-.rf-band-avatar{width:92px;height:92px;border-radius:24px;flex-shrink:0;display:grid;place-items:center;
-  background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.5);overflow:hidden;font-size:40px;font-weight:800}
-.rf-band-avatar img{width:100%;height:100%;object-fit:cover}
-.rf-band .rf-name{color:#fff}
+.rf-band{display:flex;align-items:center;gap:22px;padding:30px 40px;background:var(--band-bg,linear-gradient(120deg,var(--accent),color-mix(in srgb,var(--accent) 45%,#000) 130%));color:#fff}
+.rfp.vibrant .rf-idphoto{width:96px;height:134px;border-radius:10px;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.55)}
+.rfp.vibrant .rf-idphoto-ph{color:rgba(255,255,255,.65)}
+.rf-band .rf-name,.rf-band .rf-h-sub{color:#fff}
 .rf-v-body{display:flex;}
 .rf-side.v{width:260px;background:#f8fafc;padding:26px 22px;border-right:1px solid #eef2f7;flex-shrink:0}
 .rf-side.v .rf-sec-title{color:#111827}
 .rf-v-facts{display:flex;flex-direction:column;gap:8px;font-size:12.5px;color:#374151}
 .rf-v-facts div{display:flex;gap:8px;align-items:center}
-.rf-v-facts i{font-style:normal;color:var(--accent)}
-.rf-pill{display:inline-block;background:var(--accent);color:#fff;font-size:12px;padding:2px 10px;border-radius:999px}
+.rf-v-facts i{font-style:normal;color:var(--accent-text,var(--accent))}
+.rf-pill{display:inline-block;background:var(--accent);color:var(--on-accent,#fff);font-size:12px;padding:2px 10px;border-radius:999px}
 
 /* ============ 移动端响应式（手机宽度） ============ */
 @media screen and (max-width:520px){
   .rfp{width:100%;padding:20px 16px;box-shadow:none}
   .rf-name{font-size:24px}
-  .rf-avatar{width:64px;height:64px}
+  .rf-idphoto{width:68px;height:95px}
+  .rf-header{gap:18px}
   .rf-header.gap:not(.side){gap:14px;padding-bottom:14px;margin-bottom:16px}
   .rf-chips{gap:6px;margin-top:10px}
   .rf-chip{font-size:11px;padding:2px 9px}
@@ -397,7 +422,7 @@ export const PREVIEW_CSS = `
   .rf-side .rf-sec-title{font-size:13px}
   .rf-side .rf-skill-tags em{font-size:10px}
   .rf-main{padding:18px 16px}
-  .rf-header.side .rf-avatar{width:60px;height:60px}
+  .rf-header.side .rf-idphoto{width:76px;height:106px}
   .rf-header.side .rf-name{font-size:20px}
   /* 创意活力 -> 单列堆叠 */
   .rfp.vibrant .rf-band{flex-direction:column;text-align:center;gap:14px;padding:24px 16px 20px}
@@ -415,8 +440,10 @@ export const PREVIEW_CSS = `
 export const PRINT_CSS = `
 @media print{
   @page{size:A4;margin:10mm}
-  body{margin:0;padding:0;background:#fff}
+  html,body{margin:0;padding:0;background:#fff}
+  /* 一比一还原：保留背景色与文字颜色，不被打印引擎改色 */
+  *,*::before,*::after{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}
   .rf-canvas{padding:0;background:#fff}
-  .rfp{box-shadow:none;margin:0;width:100%}
+  .rfp{box-shadow:none;margin:0;width:auto;max-width:none;min-height:auto}
 }
 `
