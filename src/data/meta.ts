@@ -44,5 +44,8 @@ export interface TemplateMeta {
 export const TEMPLATES: TemplateMeta[] = [
   { id: 'clean', name: '简约商务', desc: '单栏清晰排版，稳重大气，适合绝大多数岗位' },
   { id: 'elegant', name: '典雅双栏', desc: '左侧边栏 + 右侧主体，信息结构化、职业感强' },
-  { id: 'vibrant', name: '创意活力', desc: '色块与点缀元素丰富，适合设计/创意/运营岗位' }
+  { id: 'vibrant', name: '创意活力', desc: '色块与点缀元素丰富，适合设计/创意/运营岗位' },
+  { id: 'timeline', name: '时间轴', desc: '以纵向时间线呈现经历，适合经历丰富的岗位' },
+  { id: 'modern', name: '极简现代', desc: '去装饰化排版，留白充足，适合设计/前沿岗位' },
+  { id: 'editorial', name: '杂志排版', desc: '衬线杂志风，侧栏强调，适合文职/媒体/管理' }
 ]

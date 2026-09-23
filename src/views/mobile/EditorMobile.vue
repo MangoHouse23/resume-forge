@@ -103,13 +103,27 @@
         <div class="st-title">主题色</div>
         <div class="st-colors">
           <span
-            v-for="c in colorPresets"
-            :key="c"
+            v-for="p in colorPresets"
+            :key="p.value"
             class="st-color"
-            :class="{ on: accent === c }"
-            :style="{ background: c }"
-            @click="setAccent(c)"
+            :class="{ on: accent === p.value }"
+            :style="{ background: p.value }"
+            :title="p.name"
+            @click="setAccent(p.value)"
           ></span>
+        </div>
+        <div class="st-title">正文字体</div>
+        <div class="st-fonts">
+          <div
+            v-for="f in fontOptions"
+            :key="f.id"
+            class="st-font"
+            :class="{ on: font === f.id }"
+            :style="f.family ? `font-family:'${f.family}',sans-serif` : ''"
+            @click="setFont(f.id)"
+          >
+            <van-icon :name="font === f.id ? 'checked' : 'check'" />{{ f.name }}
+          </div>
         </div>
       </div>
     </van-popup>
@@ -137,6 +151,9 @@ import { MODULE_CATALOG, MODULE_MAP, TEMPLATES } from '@/data/meta'
 import { presetById } from '@/data/presets'
 import { useResumeStore } from '@/store/resumeStore'
 import VecIcon from '@/components/VecIcon.vue'
+import { ACCENT_PRESETS } from '@/data/themes'
+import { FONT_OPTIONS } from '@/data/fonts'
+import { loadFontLink } from '@/utils/fontLoader'
 import { buildFullHtml } from '@/render/resumeHtml'
 import type { ResumeModuleKey } from '@/types/resume'
 
@@ -157,6 +174,8 @@ const activeModule = ref<ResumeModuleKey>('targetInfo')
 const accent = computed(() => store.state.current.meta.accentColor)
 const templateId = computed(() => store.state.current.meta.templateId)
 const templates = TEMPLATES
+const fontOptions = FONT_OPTIONS
+const font = computed(() => store.state.current.meta.font)
 
 const labelOf = (k: ResumeModuleKey) => MODULE_MAP[k]?.label || k
 const hintOf = (k: ResumeModuleKey) => MODULE_MAP[k]?.hint || ''
@@ -214,9 +233,11 @@ function moveOrd(k: ResumeModuleKey, dir: number) {
 
 // 风格与配色
 const showStyle = ref(false)
-const colorPresets = ['#2563eb', '#0ea5e9', '#7c3aed', '#ec4899', '#f59e0b', '#16a34a', '#ef4444', '#0d9488', '#1f2937']
+const colorPresets = ACCENT_PRESETS
 function setTemplate(id: string) { store.state.current.meta.templateId = id; store.cacheCurrent() }
 function setAccent(c: string) { store.state.current.meta.accentColor = c; store.cacheCurrent() }
+function setFont(id: string) { store.state.current.meta.font = id; loadFontLink(id); store.cacheCurrent() }
+watch(font, (id) => loadFontLink(id || 'default'), { immediate: true })
 
 // 导出
 const showExport = ref(false)
@@ -324,4 +345,8 @@ onBeforeUnmount(() => {
 .st-colors { display: flex; flex-wrap: wrap; gap: 12px; }
 .st-color { width: 34px; height: 34px; border-radius: 50%; cursor: pointer; }
 .st-color.on { outline: 3px solid #1f2937; outline-offset: 2px; }
+.st-fonts { display: flex; flex-wrap: wrap; gap: 8px; }
+.st-font { flex: 1 1 40%; min-width: 40%; box-sizing: border-box; display: inline-flex; align-items: center; gap: 6px; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13px; cursor: pointer; }
+.st-font.on { border-color: #2563eb; background: #eff6ff; }
+.st-font :deep(.van-icon) { color: #2563eb; }
 </style>

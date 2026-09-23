@@ -39,8 +39,8 @@ export function darken(hex: string, k: number): string {
   return toHex({ r: c.r * (1 - k), g: c.g * (1 - k), b: c.b * (1 - k) })
 }
 
-// 用于白/浅底上的强调文字：浅色主题自动加深以保证可读
+// 用于白/浅底上的强调文字：浅色/白色主题自动充分加深以保证对比度
 export function accentText(hex: string): string {
   const base = hex || '#a9472f'
-  return isLight(base) ? darken(base, 0.5) : base
+  return isLight(base) ? darken(base, 0.62) : base
 }

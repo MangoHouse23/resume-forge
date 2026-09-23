@@ -108,6 +108,7 @@ export interface ResumeData {
     professionId: string
     templateId: string // 视觉风格
     accentColor: string
+    font: string // 自定义字体（FONTS 的 id），'default' 表示跟随默认
   }
   targetInfo: TargetInfo
   basicInfo: BasicInfo

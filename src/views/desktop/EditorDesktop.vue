@@ -39,11 +39,27 @@
           <div class="color-picker">
             <div class="cp-title serif">主题色</div>
             <div class="cp-grid">
-              <span v-for="c in colorPresets" :key="c" class="cp-dot" :class="{ active: accent === c }" :style="{ background: c }" @click="setAccent(c)"></span>
+              <span v-for="p in colorPresets" :key="p.value" class="cp-dot" :class="{ active: accent === p.value }" :style="{ background: p.value }" :title="p.name" @click="setAccent(p.value)"></span>
             </div>
             <el-color-picker :model-value="accent" size="small" @update:model-value="(v)=>v && setAccent(v as string)" />
           </div>
         </el-popover>
+
+        <el-dropdown trigger="click" @command="setFont">
+          <el-button size="small" class="tb-color-btn">
+            <el-icon><FontFamily /></el-icon>字体
+          </el-button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item v-for="f in fontOptions" :key="f.id" :command="f.id">
+                <span class="font-opt" :style="f.family ? `font-family:'${f.family}',sans-serif` : ''">
+                  <el-icon class="font-check" v-if="font === f.id"><Check /></el-icon>
+                  {{ f.name }}
+                </span>
+              </el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
       </div>
 
       <div class="tb-right">
@@ -128,6 +144,9 @@ import { MODULE_MAP, TEMPLATES } from '@/data/meta'
 import { presetById } from '@/data/presets'
 import { useResumeStore } from '@/store/resumeStore'
 import VecIcon from '@/components/VecIcon.vue'
+import { ACCENT_PRESETS } from '@/data/themes'
+import { FONT_OPTIONS } from '@/data/fonts'
+import { loadFontLink } from '@/utils/fontLoader'
 import { buildFullHtml } from '@/render/resumeHtml'
 import { onColor } from '@/utils/color'
 import type { ResumeModuleKey } from '@/types/resume'
@@ -162,7 +181,11 @@ const profession = computed(() => presetById(store.state.current.meta.profession
 const accent = computed(() => store.state.current.meta.accentColor)
 const templateName = computed(() => templates.find((t) => t.id === store.state.current.meta.templateId)?.name || '')
 
-const colorPresets = ['#2563eb', '#0ea5e9', '#7c3aed', '#ec4899', '#f59e0b', '#16a34a', '#ef4444', '#0d9488', '#1f2937']
+const colorPresets = ACCENT_PRESETS
+const fontOptions = FONT_OPTIONS
+const font = computed(() => store.state.current.meta.font)
+function setFont(id: string) { store.state.current.meta.font = id; loadFontLink(id); store.cacheCurrent() }
+watch(font, (id) => loadFontLink(id || 'default'), { immediate: true })
 
 function labelOf(k: ResumeModuleKey) { return MODULE_MAP[k]?.label || k }
 function hintOf(k: ResumeModuleKey) { return MODULE_MAP[k]?.hint || '' }
@@ -276,6 +299,8 @@ onBeforeUnmount(() => { stopWatch(); clearTimeout(saveTimer) })
 .cp-dot { width: 26px; height: 26px; border-radius: 50%; cursor: pointer; transition: transform .12s; }
 .cp-dot:hover { transform: scale(1.15); }
 .cp-dot.active { outline: 2px solid var(--rf-ink); outline-offset: 2px; }
+.font-opt { display: inline-flex; align-items: center; gap: 8px; min-width: 132px; font-size: 14px; }
+.font-opt .font-check { color: var(--rf-ink); margin-left: -16px; font-size: 12px; }
 
 @media (max-width: 1180px) { .form-panel { width: 400px; } }
 @media (max-width: 900px) { .tb-mid { display: none; } .mnav { width: 60px; } .mnav .mn-label, .mnav-add { display: none; } .form-panel { width: 340px; } .hide-sm { display: none; } }

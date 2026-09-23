@@ -27,7 +27,7 @@ const commonModuleOrder: ResumeModuleKey[] = [
 
 export function createEmptyResume(): ResumeData {
   return {
-    meta: { title: '未命名简历', professionId: 'general', templateId: 'clean', accentColor: '#2563eb' },
+    meta: { title: '未命名简历', professionId: 'general', templateId: 'clean', accentColor: '#2563eb', font: 'default' },
     targetInfo: { position: '', salary: '', city: '', onBoardDate: '随时到岗', workModel: '全职', industry: '' },
     basicInfo: { name: '', avatar: '', gender: '', age: '', birthDate: '', phone: '', email: '', city: '', wechat: '', website: '', politicalStatus: '', maritalStatus: '', address: '' },
     jobObjective: '',
